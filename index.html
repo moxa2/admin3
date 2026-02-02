@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - أونلاين</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* تعريف المتغير الافتراضي للون */
+        :root { --main: #e67e22; }
+
+        body { 
+            font-family: 'Tajawal', sans-serif; 
+            background-color: #000; 
+            color: white; 
+        }
+
+        /* === تصميم حقول الإدخال (لحل مشكلة الخلفية البيضاء) === */
+        .input-box {
+            width: 100%;
+            background: #1a1a1a !important; /* فرض اللون الغامق */
+            border: 1px solid #333;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: white !important;
+            outline: none;
+            transition: 0.3s;
+        }
+        .input-box:focus {
+            border-color: var(--main);
+            background: #222 !important;
+        }
+
+        /* === تصميم الأزرار الثانوية === */
+        .btn-secondary {
+            background-color: #222;
+            border: 1px solid #333;
+            color: white;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover {
+            background-color: #333;
+            border-color: #555;
+        }
+
+        /* === تنسيقات إضافية === */
+        .tab-btn.active { color: var(--main); border-bottom: 2px solid var(--main); }
+        .status-card.selected { border-color: var(--main); border-width: 2px; }
+        .option-card.active { border-color: var(--main); background-color: #222; }
+        .option-card.active .radio-ui { background-color: var(--main); border-color: var(--main); }
+        .radio-ui { width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid #4b5563; transition: all 0.2s; }
+        .time-btn.active { background-color: var(--main); color: black; }
+        .time-btn { background-color: transparent; color: white; transition: 0.3s; }
+        
+        /* إخفاء شريط التمرير */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="selection:bg-[var(--main)] selection:text-black">
+
+    <div id="loadingOverlay" class="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-[var(--main)] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div class="text-gray-400 font-bold">جاري الاتصال بقاعدة البيانات...</div>
+    </div>
+
+    <div id="adminPanel" class="min-h-screen pb-20 hidden animate__animated animate__fadeIn">
+        <header class="bg-[#111] border-b border-[#222] sticky top-0 z-50">
+            <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-[var(--main)] flex items-center justify-center text-black font-black text-lg">Q</div>
+                    <h2 class="text-xl font-bold">لوحة التحكم (Online)</h2>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="window.open('https://ajwad6780-del.github.io/MENU-1x2//', '_blank')" class="btn-secondary px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2">
+                        <i class="fas fa-eye"></i> معاينة المنيو
+                    </button>
+                    
+                    <button id="saveBtn" onclick="window.saveToCloud()" class="bg-[var(--main)] text-black px-6 py-2.5 rounded-xl text-sm font-black hover:brightness-110 transition flex items-center gap-2">
+                        <i class="fas fa-cloud-upload-alt"></i> حفظ التغييرات
+                    </button>
+                </div>
+            </div>
+            <div class="max-w-6xl mx-auto px-4 mt-2 overflow-x-auto flex gap-6 text-sm no-scrollbar">
+                <button onclick="switchTab('settings')" class="tab-btn active py-3 whitespace-nowrap"><i class="fas fa-cog me-2"></i>الإعدادات</button>
+                <button onclick="switchTab('interface')" class="tab-btn py-3 whitespace-nowrap text-gray-400 hover:text-white"><i class="fas fa-store me-2"></i>المظهر</button>
+                <button onclick="switchTab('cats')" class="tab-btn py-3 whitespace-nowrap text-gray-400 hover:text-white"><i class="fas fa-utensils me-2"></i>القائمة</button>
+                <button onclick="switchTab('stock')" class="tab-btn py-3 whitespace-nowrap text-red-400 font-bold hover:text-red-300"><i class="fas fa-boxes me-2"></i>إدارة المخزون</button>
+                <button onclick="switchTab('social')" class="tab-btn py-3 whitespace-nowrap text-gray-400 hover:text-white"><i class="fas fa-share-alt me-2"></i>التواصل</button>
+                <button onclick="switchTab('themes')" class="tab-btn py-3 whitespace-nowrap text-gray-400 hover:text-white"><i class="fas fa-palette me-2"></i>الثيمات</button>
+            </div>
+        </header>
+
+        <div class="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
+            <div id="tab-settings" class="tab-content animate__animated animate__fadeIn">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-[#111] p-6 rounded-2xl border border-[#222]">
+                        <h3 class="text-lg font-bold mb-4 text-[var(--main)]">البيانات الأساسية</h3>
+                        <div class="space-y-4">
+                            <div><label class="text-xs text-gray-400 mb-1 block">اسم المطعم</label><input id="set_name" class="input-box"></div>
+                            <div><label class="text-xs text-gray-400 mb-1 block">وصف مختصر</label><input id="set_desc" class="input-box"></div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-xs text-gray-400 mb-1 block">رقم الواتساب</label><input id="set_wa" class="input-box" type="number"></div>
+                                <div><label class="text-xs text-gray-400 mb-1 block font-bold text-[var(--main)]">سعر التوصيل</label><input id="set_delivery_fee" class="input-box border-[var(--main)]/30" type="number"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-[#111] p-6 rounded-2xl border border-[#222]">
+                        <h3 class="text-lg font-bold mb-4 text-[var(--main)]">الأمان</h3>
+                        <div class="space-y-4"><div><label class="text-xs text-gray-400 mb-1 block">كلمة مرور الإدارة</label><input id="set_pass" class="input-box"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-interface" class="tab-content hidden animate__animated animate__fadeIn">
+                <div class="grid gap-8">
+                    <div class="bg-[#111] p-6 rounded-3xl border border-[#222]">
+                        <h3 class="text-xl font-black mb-6 flex items-center gap-2 text-white"><span class="w-8 h-8 rounded-lg bg-[var(--main)] text-black flex items-center justify-center text-sm"><i class="fas fa-power-off"></i></span> حالة المطعم</h3>
+                        <input type="hidden" id="set_status">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div onclick="selectStatus('auto')" id="status-card-auto" class="status-card p-5 rounded-2xl text-center flex flex-col items-center gap-3 bg-[#1a1a1a] border border-[#333] cursor-pointer hover:bg-[#252525]">
+                                <div class="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-xl"><i class="fas fa-clock"></i></div>
+                                <div><div class="font-bold text-lg">تلقائي</div><div class="text-xs text-gray-400 mt-1">حسب الجدول</div></div>
+                            </div>
+                            <div onclick="selectStatus('open')" id="status-card-open" class="status-card p-5 rounded-2xl text-center flex flex-col items-center gap-3 bg-[#1a1a1a] border border-[#333] cursor-pointer hover:bg-[#252525]">
+                                <div class="w-12 h-12 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center text-xl"><i class="fas fa-door-open"></i></div>
+                                <div><div class="font-bold text-lg">مفتوح دائماً</div><div class="text-xs text-gray-400 mt-1">تجاهل الجدول</div></div>
+                            </div>
+                            <div onclick="selectStatus('closed')" id="status-card-closed" class="status-card p-5 rounded-2xl text-center flex flex-col items-center gap-3 bg-[#1a1a1a] border border-[#333] cursor-pointer hover:bg-[#252525]">
+                                <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center text-xl"><i class="fas fa-door-closed"></i></div>
+                                <div><div class="font-bold text-lg">مغلق مؤقتاً</div><div class="text-xs text-gray-400 mt-1">للطوارئ</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="scheduleContainer" class="hidden bg-[#111] p-6 rounded-3xl border border-[#222] animate__animated animate__fadeInDown">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b border-[#333] pb-4">
+                            <h3 class="text-xl font-black flex items-center gap-2"><span class="text-[var(--main)]"><i class="far fa-calendar-alt"></i></span> ساعات العمل</h3>
+                            <button onclick="copyFirstDayToAll()" class="text-xs btn-secondary px-4 py-2 rounded-lg flex items-center gap-2"><i class="fas fa-copy"></i> نسخ توقيت السبت للجميع</button>
+                        </div>
+                        <div id="weeklySchedule" class="space-y-2"></div>
+                    </div>
+
+                    <div class="bg-[#111] p-6 rounded-3xl border border-[#222]">
+                        <h3 class="text-xl font-black mb-6 flex items-center gap-2"><span class="text-[var(--main)]"><i class="fas fa-image"></i></span> الهوية البصرية</h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-[#1a1a1a] p-4 rounded-2xl border border-[#333]">
+                                <label class="text-xs font-bold text-gray-400 mb-2 block">رابط الشعار</label>
+                                <div class="flex gap-3 items-center"><img id="preview_logo" src="" class="w-14 h-14 rounded-xl object-cover bg-black border border-[#333]"><input id="set_logo" oninput="document.getElementById('preview_logo').src=this.value" class="input-box"></div>
+                            </div>
+                            <div class="bg-[#1a1a1a] p-4 rounded-2xl border border-[#333]">
+                                <label class="text-xs font-bold text-gray-400 mb-2 block">رابط الغلاف</label>
+                                <div class="flex gap-3 items-center"><img id="preview_cover" src="" class="w-24 h-14 rounded-xl object-cover bg-black border border-[#333]"><input id="set_cover" oninput="document.getElementById('preview_cover').src=this.value" class="input-box"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#111] p-6 rounded-3xl border border-[#222]">
+                        <h3 class="text-lg font-bold mb-4 text-[var(--main)]"><i class="fas fa-bullhorn me-2"></i>نظام الإعلانات</h3>
+                        <div class="bg-[#1a1a1a] p-4 rounded-xl mb-6 border border-[#333]">
+                            <label class="text-sm font-bold mb-2 block">الشريط الإخباري</label>
+                            <div class="flex gap-2 mb-2">
+                                <input id="set_ad_text" placeholder="النص..." class="input-box">
+                                <select id="set_ad_mode" class="input-box w-32 bg-[#222]">
+                                    <option value="scroll">متحرك</option>
+                                    <option value="static">ثابت</option>
+                                    <option value="none">إخفاء</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bg-[#1a1a1a] p-4 rounded-xl border border-[#333]">
+                            <div class="flex justify-between items-center mb-4">
+                                <label class="text-sm font-bold">صور السلايدر (البانرات)</label>
+                                <button onclick="addAdImageInput()" class="text-xs bg-[var(--main)] text-black px-3 py-1 rounded font-bold">+ إضافة صورة</button>
+                            </div>
+                            <div id="adImagesContainer" class="space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-cats" class="tab-content hidden animate__animated animate__fadeIn">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">قائمة الطعام</h3>
+                    <div class="flex gap-2">
+                        <button onclick="addCat()" class="btn-secondary px-4 py-2 rounded-lg text-sm font-bold">+ صنف جديد</button>
+                        <button onclick="openItemEditor()" class="bg-[var(--main)] text-black px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-[var(--main)]/20">+ أكلة جديدة</button>
+                    </div>
+                </div>
+                
+                <div class="menu-search-container animate__animated animate__fadeIn relative mb-4">
+                    <input type="text" id="menuSearchInput" onkeyup="renderCategories()" placeholder="ابحث عن طبق، مكونات، أو سعر..." class="input-box pl-10">
+                    <i class="fas fa-search absolute left-4 top-4 text-gray-500"></i>
+                </div>
+                <div id="adminCatList" class="space-y-4"></div>
+            </div>
+
+            <div id="tab-stock" class="tab-content hidden animate__animated animate__fadeIn">
+                <div class="bg-[#111] p-6 rounded-3xl border border-[#222] mb-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div><h3 class="text-2xl font-black text-[var(--main)] mb-1"><i class="fas fa-boxes me-2"></i> إدارة المخزون</h3><p class="text-gray-400 text-sm">تحكم في توفر الأطباق بضغطة زر</p></div>
+                        <div class="bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl flex flex-col items-center min-w-[120px]"><span class="text-3xl font-black text-red-500" id="stat_sold_count">0</span><span class="text-[10px] text-gray-400 font-bold tracking-wide">أطباق موقوفة</span></div>
+                    </div>
+                    <div class="mt-6 relative"><i class="fas fa-search absolute left-4 top-4 text-gray-500"></i><input type="text" id="stockSearch" oninput="renderStockItems(this.value)" placeholder="ابحث عن اسم الطبق..." class="input-box bg-[#0a0a0a] border-none pl-12 h-14 text-lg rounded-2xl focus:ring-2 ring-[var(--main)]/50 transition"></div>
+                </div>
+                <div id="stockList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <div id="tab-social" class="tab-content hidden animate__animated animate__fadeIn">
+                <div class="bg-[#111] p-6 rounded-2xl border border-[#222] space-y-4">
+                    <h3 class="text-lg font-bold text-[var(--main)]">روابط التواصل</h3>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-3"><i class="fab fa-facebook text-blue-500 w-6 text-center"></i><input id="set_fb" class="input-box"></div>
+                        <div class="flex items-center gap-3"><i class="fab fa-instagram text-pink-500 w-6 text-center"></i><input id="set_ig" class="input-box"></div>
+                        <div class="flex items-center gap-3"><i class="fab fa-tiktok text-white w-6 text-center"></i><input id="set_tk" class="input-box"></div>
+                        <div class="flex items-center gap-3"><i class="fas fa-map-marker-alt text-red-500 w-6 text-center"></i><input id="set_map" class="input-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-themes" class="tab-content hidden animate__animated animate__fadeIn">
+                <div id="themesContainer" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="stockModal" class="fixed inset-0 z-[300] bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#151515] w-full max-w-md rounded-[32px] p-6 border border-[#333] shadow-2xl animate__animated animate__zoomIn">
+            <div class="text-center mb-6"><h3 class="text-xl font-black mb-1" id="modalItemName">اسم الطبق</h3><p class="text-gray-500 text-xs">حدد حالة التوفر لهذا الطبق</p></div>
+            <input type="hidden" id="stock_item_id"><input type="hidden" id="selected_mode" value="available">
+            <div class="space-y-2">
+                <div onclick="selectStockOption('available')" id="opt-available" class="option-card cursor-pointer p-3 rounded-xl border border-[#333] hover:bg-[#222] transition flex justify-between items-center"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center"><i class="fas fa-check"></i></div><span class="font-bold">متاح (متوفر)</span></div><div class="w-4 h-4 rounded-full border border-gray-600 radio-ui"></div></div>
+                <div onclick="selectStockOption('auto')" id="opt-auto" class="option-card cursor-pointer p-3 rounded-xl border border-[#333] hover:bg-[#222] transition flex justify-between items-center"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-yellow-500/10 text-yellow-500 flex items-center justify-center"><i class="fas fa-moon"></i></div><div><div class="font-bold">تلقائي (يعود غداً)</div><div class="text-[10px] text-gray-500">يعود متاحاً الساعة 6:00 ص</div></div></div><div class="w-4 h-4 rounded-full border border-gray-600 radio-ui"></div></div>
+                <div onclick="selectStockOption('timed')" id="opt-timed" class="option-card cursor-pointer p-3 rounded-xl border border-[#333] hover:bg-[#222] transition flex flex-col gap-2"><div class="flex items-center justify-between w-full"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center"><i class="fas fa-stopwatch"></i></div><span class="font-bold">تحديد وقت للعودة</span></div><div class="w-4 h-4 rounded-full border border-gray-600 radio-ui"></div></div><div id="timeInputs" class="hidden border-t border-[#333] pt-4 mt-2 animate__animated animate__fadeIn"><label class="text-xs text-gray-400 mb-2 block">يعود متاحاً بعد:</label><div class="flex gap-2"><input type="number" id="time_duration" class="input-box text-center font-bold text-lg" value="1" min="1"><div class="flex bg-[#0a0a0a] rounded-xl p-1 border border-[#333]"><button onclick="setTimeUnit('hours')" id="btn-hours" class="time-btn active px-4 py-2 rounded-lg text-xs font-bold hover:bg-white/10">ساعات</button><button onclick="setTimeUnit('days')" id="btn-days" class="time-btn px-4 py-2 rounded-lg text-xs font-bold hover:bg-white/10">أيام</button></div></div></div></div>
+                <div onclick="selectStockOption('manual')" id="opt-manual" class="option-card cursor-pointer p-3 rounded-xl border border-[#333] hover:bg-[#222] transition flex justify-between items-center"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center"><i class="fas fa-ban"></i></div><span class="font-bold">يدوي (إيقاف دائم)</span></div><div class="w-4 h-4 rounded-full border border-gray-600 radio-ui"></div></div>
+            </div>
+            <div class="flex gap-3 mt-8"><button onclick="saveStockSettings()" class="flex-[2] bg-[var(--main)] text-black py-4 rounded-xl font-black hover:brightness-110 transition">حفظ الحالة</button><button onclick="document.getElementById('stockModal').classList.add('hidden')" class="flex-1 btn-secondary py-4 rounded-xl font-bold">إلغاء</button></div>
+        </div>
+    </div>
+
+    <div id="itemModal" class="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 animate__animated animate__fadeIn">
+        <div class="bg-[#151515] w-full max-w-4xl h-auto max-h-[90vh] rounded-[32px] p-6 md:p-8 border border-[#333] shadow-2xl overflow-y-auto">
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="space-y-5">
+                    <div class="flex justify-between items-center mb-2"><h3 class="text-2xl font-black text-[var(--main)] flex items-center gap-2"><i class="fas fa-edit"></i> تعديل بيانات الطبق</h3></div>
+                    <input type="hidden" id="edit_id">
+                    <div class="grid grid-cols-2 gap-4"><div><label class="text-gray-400 text-xs block mb-1">اسم الطبق</label><input id="edit_name" oninput="updatePreview()" class="input-box" placeholder="مثلاً: برجر لحم"></div><div><label class="text-gray-400 text-xs block mb-1">التصنيف</label><select id="edit_cat" class="input-box text-sm"></select></div></div>
+                    <div class="grid grid-cols-3 gap-4"><div class="col-span-2"><label class="text-gray-400 text-xs block mb-1">السعر الحالي</label><input id="edit_price" oninput="updatePreview()" type="number" class="input-box font-bold text-[var(--main)]"></div><div><label class="text-gray-400 text-xs block mb-1">السعر القديم</label><input id="edit_old" type="number" class="input-box text-gray-500"></div></div>
+                    <div><label class="text-gray-400 text-xs block mb-1">رابط الصورة</label><input id="edit_img" oninput="updatePreview()" class="input-box text-xs font-mono text-blue-400" placeholder="https://..."></div>
+                    <div><label class="text-gray-400 text-xs block mb-1">وصف الطبق (المكونات)</label><textarea id="edit_desc" oninput="updatePreview()" class="input-box h-24 resize-none leading-relaxed" placeholder="اكتب وصفاً شهياً للطبق..."></textarea></div>
+                </div>
+                <div class="hidden md:block pt-8 bg-black/20 p-4 rounded-xl">
+                    <div class="text-center mb-4"><span class="bg-[#333] text-white px-3 py-1 rounded-full text-[10px] font-bold"><i class="fas fa-eye me-1"></i> معاينة حية (Live Preview)</span></div>
+                    <div class="animate__animated animate__pulse rounded-xl overflow-hidden border border-[#333]">
+                        <img id="prev_img" src="https://placehold.co/400x300/1a1a1a/333?text=Preview" class="w-full h-48 object-cover">
+                        <div class="p-4 bg-[#1a1a1a]">
+                            <div class="flex justify-between items-start mb-2"><h3 id="prev_name" class="font-bold text-lg">اسم الطبق</h3><span id="prev_price" class="text-[var(--main)] font-bold">0 د.ع</span></div>
+                            <p id="prev_desc" class="text-gray-400 text-xs leading-relaxed">الوصف سيظهر هنا بشكل مباشر أثناء الكتابة...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-4 mt-8 pt-6 border-t border-[#333]"><button onclick="saveItem()" class="flex-[2] bg-[var(--main)] text-black py-4 rounded-xl font-black text-lg hover:brightness-110 shadow-lg shadow-[var(--main)]/20 transition"><i class="fas fa-save me-2"></i> حفظ التعديلات</button><button onclick="document.getElementById('itemModal').classList.add('hidden')" class="flex-1 btn-secondary py-4 rounded-xl font-bold">إلغاء</button></div>
+        </div>
+    </div>
+    
+    <div id="loginModal" class="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4 hidden">
+        <div class="bg-[#111] w-full max-w-sm p-8 rounded-3xl border border-[#333] text-center shadow-2xl animate__animated animate__zoomIn">
+            <div class="w-16 h-16 bg-[var(--main)] rounded-full mx-auto mb-6 flex items-center justify-center text-2xl font-black text-black"><i class="fas fa-lock"></i></div>
+            <h2 class="font-bold mb-2 text-2xl">دخول الإدارة</h2>
+            <input id="loginPass" type="password" class="input-box mb-4 text-center text-lg tracking-widest" placeholder="••••">
+            <button onclick="doLogin()" class="w-full bg-[var(--main)] text-black py-3.5 rounded-xl font-bold hover:brightness-110 transition">دخول</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- 1. إعدادات فايربيس ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBeDIXVtLVLzYATP7bGHYHNBPTKi-_rQ48",
+            authDomain: "vip3-11eb5.firebaseapp.com",
+            projectId: "vip3-11eb5",
+            storageBucket: "vip3-11eb5.firebasestorage.app",
+            messagingSenderId: "800738404158",
+            appId: "1:800738404158:web:3d786a23bc6e89e46dae6f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db_cloud = getFirestore(app);
+        const docRef = doc(db_cloud, "restaurant", "mainData");
+
+        window.db = { 
+            config: { name: "مطعم قصة", status: "auto", isOpen: true, schedule: {}, theme: 1, deliveryFee: 0, adText: "", adMode: "scroll", adImages: [] }, 
+            cats: [], items: [] 
+        };
+
+        const daysMap = [{key:'sat',label:'السبت'},{key:'sun',label:'الأحد'},{key:'mon',label:'الاثنين'},{key:'tue',label:'الثلاثاء'},{key:'wed',label:'الأربعاء'},{key:'thu',label:'الخميس'},{key:'fri',label:'الجمعة'}];
+        
+        // تعريف ألوان الثيمات
+        const themes = [
+            {id:1, name:'كلاسيك', c:'#e67e22'}, // برتقالي
+            {id:2, name:'ذهبي', c:'#d4af37'},
+            {id:3, name:'بحري', c:'#3498db'}, // أزرق
+            {id:4, name:'حار', c:'#e74c3c'}, // أحمر
+            {id:5, name:'طبيعي', c:'#2ecc71'}, // أخضر
+            {id:6, name:'ملكي', c:'#9b59b6'}, // بنفسجي
+            {id:7, name:'أصفر', c:'#f1c40f'},
+            {id:8, name:'فيروزي', c:'#1abc9c'}
+        ];
+
+        let selectedTheme = 1, currentTimeUnit = 'hours';
+
+        window.gatherData = function() {
+            const c = window.db.config;
+            c.name = document.getElementById('set_name').value;
+            c.desc = document.getElementById('set_desc').value;
+            c.wa = document.getElementById('set_wa').value;
+            c.pass = document.getElementById('set_pass').value;
+            c.deliveryFee = parseInt(document.getElementById('set_delivery_fee').value) || 0;
+            const statusVal = document.getElementById('set_status').value;
+            c.status = statusVal; c.isOpen = statusVal !== 'closed'; 
+            c.logo = document.getElementById('set_logo').value;
+            c.cover = document.getElementById('set_cover').value;
+            c.theme = selectedTheme;
+            c.adText = document.getElementById('set_ad_text').value;
+            c.adMode = document.getElementById('set_ad_mode').value;
+            c.fb = document.getElementById('set_fb').value;
+            c.ig = document.getElementById('set_ig').value;
+            c.tk = document.getElementById('set_tk').value;
+            c.map = document.getElementById('set_map').value;
+            const newSchedule = {};
+            daysMap.forEach(d => { newSchedule[d.key] = { active: document.getElementById(`sch_active_${d.key}`).checked, start: document.getElementById(`sch_start_${d.key}`).value, end: document.getElementById(`sch_end_${d.key}`).value }; });
+            c.schedule = newSchedule;
+        };
+
+        window.saveToCloud = async function() {
+            const btn = document.getElementById('saveBtn'); 
+            const old = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...'; btn.disabled = true;
+            gatherData(); 
+            try { await setDoc(docRef, window.db); btn.innerHTML = '<i class="fas fa-check"></i> تم الحفظ!'; setTimeout(() => { btn.innerHTML = old; btn.disabled = false; }, 2000); } catch (e) { alert("خطأ: " + e.message); btn.innerHTML = old; btn.disabled = false; }
+        };
+
+        window.loadFromCloud = async function() {
+            try {
+                const docSnap = await getDoc(docRef);
+                const overlay = document.getElementById('loadingOverlay');
+                if(overlay) overlay.classList.add('hidden');
+                const loginModal = document.getElementById('loginModal');
+                if(loginModal) loginModal.classList.remove('hidden');
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.db = { ...window.db, ...data };
+                    if(data.config) window.db.config = { ...window.db.config, ...data.config };
+                    checkStockExpiry();
+                }
+                loadAdminData();
+            } catch (e) { console.error(e); alert("فشل تحميل البيانات:\n" + e.message); }
+        };
+
+        function checkStockExpiry() {
+            const now = Date.now();
+            let changed = false;
+            window.db.items.forEach(item => { if(item.sold && item.soldInfo && item.soldInfo.mode !== 'manual' && item.soldInfo.until && now > item.soldInfo.until) { item.sold = false; item.soldInfo = null; changed = true; } });
+            if(changed) saveToCloud();
+        }
+
+        window.loadAdminData = function() {
+            const c = window.db.config;
+            
+            // تطبيق الثيم المحفوظ
+            selectedTheme = c.theme || 1; 
+            selectTheme(selectedTheme); 
+
+            document.getElementById('set_name').value = c.name || "";
+            document.getElementById('set_desc').value = c.desc || "";
+            document.getElementById('set_wa').value = c.wa || "";
+            document.getElementById('set_pass').value = c.pass || "";
+            document.getElementById('set_delivery_fee').value = c.deliveryFee || 0;
+            selectStatus(c.status || 'auto'); renderSchedule();
+            document.getElementById('set_logo').value = c.logo || ""; if(document.getElementById('preview_logo')) document.getElementById('preview_logo').src = c.logo || "";
+            document.getElementById('set_cover').value = c.cover || ""; if(document.getElementById('preview_cover')) document.getElementById('preview_cover').src = c.cover || "";
+            document.getElementById('set_ad_text').value = c.adText || "";
+            document.getElementById('set_ad_mode').value = c.adMode || "scroll";
+            renderAdImagesInputs();
+            document.getElementById('set_fb').value = c.fb || ""; document.getElementById('set_ig').value = c.ig || "";
+            document.getElementById('set_tk').value = c.tk || ""; document.getElementById('set_map').value = c.map || "";
+            renderCategories(); renderStockItems();
+        };
+
+        window.renderCategories = function() { 
+            const l = document.getElementById('adminCatList'); 
+            if(!l) return;
+            l.innerHTML = ''; 
+            const searchTerm = document.getElementById('menuSearchInput').value.toLowerCase();
+            window.db.cats.forEach(c => { 
+                const catItems = window.db.items.filter(i => i.catId == c.id && (i.name.toLowerCase().includes(searchTerm) || (i.desc && i.desc.toLowerCase().includes(searchTerm))));
+                if (searchTerm && catItems.length === 0) return;
+                const count = window.db.items.filter(i => i.catId == c.id).length;
+                l.innerHTML += `<div class="bg-[#1a1a1a] rounded-xl overflow-hidden border border-[#333] transition-all animate__animated animate__fadeIn"><div class="flex items-center gap-2 p-3 bg-[#222]"><button onclick="document.getElementById('cat-items-${c.id}').classList.toggle('hidden')" class="shrink-0 text-gray-400 w-8 h-8 rounded-full bg-[#333] hover:bg-[#444] flex items-center justify-center"><i class="fas fa-chevron-down"></i></button><input onchange="window.db.cats.find(x=>x.id==${c.id}).name=this.value" value="${c.name}" class="bg-transparent font-bold text-lg outline-none flex-1 text-white min-w-0 truncate"><span class="cat-badge shrink-0 text-[10px] md:text-xs whitespace-nowrap text-gray-500">${count} أطباق</span><button onclick="deleteCat(${c.id})" class="shrink-0 text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition flex items-center justify-center w-8 h-8"><i class="fas fa-trash"></i></button></div><div id="cat-items-${c.id}" class="${searchTerm ? '' : 'hidden'} p-2 bg-[#1a1a1a] space-y-2 border-t border-[#333]">${catItems.map(i=>`<div class="flex items-center gap-3 p-2 bg-[#222] rounded-lg hover:bg-[#2a2a2a] transition"><img src="${i.img||'https://placehold.co/100'}" class="w-10 h-10 rounded object-cover bg-black shrink-0"><div class="flex-1 min-w-0"><div class="font-bold text-sm truncate text-white">${i.name}</div><div class="text-xs text-[var(--main)] font-bold">${i.price} د.ع</div></div><button onclick="openItemEditor(${i.id})" class="text-blue-400 text-xs px-2 hover:text-blue-300 shrink-0">تعديل</button><button onclick="deleteItem(${i.id})" class="text-red-500 text-xs px-2 hover:text-red-400 shrink-0"><i class="fas fa-times"></i></button></div>`).join('')}${catItems.length === 0 ? '<div class="text-center text-gray-500 text-xs py-2">لا توجد أطباق في هذا القسم</div>' : ''}</div></div>`; 
+            }); 
+        };
+
+        window.renderAdImagesInputs = function() { 
+            const c = document.getElementById('adImagesContainer'); 
+            c.innerHTML = ''; 
+            if (!window.db.config.adImages) window.db.config.adImages = [];
+            window.db.config.adImages.forEach((u, i) => { c.innerHTML += `<div class="flex gap-2 animate__animated animate__fadeIn"><input type="text" value="${u}" class="input-box text-sm py-2" onchange="window.db.config.adImages[${i}]=this.value" placeholder="رابط الصورة..."><button onclick="window.removeAdImage(${i})" class="text-red-500 px-3 hover:bg-red-500/10 rounded"><i class="fas fa-trash"></i></button></div>`; }); 
+        };
+        window.addAdImageInput = function() { if(!window.db.config.adImages) window.db.config.adImages = []; window.db.config.adImages.push(""); renderAdImagesInputs(); };
+        window.removeAdImage = function(index) { if(confirm('حذف هذه الصورة؟')) { window.db.config.adImages.splice(index, 1); renderAdImagesInputs(); } };
+
+        window.renderThemesGrid = function() {
+            const container = document.getElementById('themesContainer');
+            if(!container) return;
+            container.innerHTML = themes.map(t => `<div onclick="selectTheme(${t.id})" class="cursor-pointer bg-[#1a1a1a] p-4 rounded-xl border ${selectedTheme===t.id ? 'border-[var(--main)]' : 'border-[#333]'} hover:border-[var(--main)] transition text-center group"><div class="w-full h-12 rounded-lg mb-3 shadow-lg" style="background:${t.c}"></div><span class="text-sm font-bold text-gray-400 group-hover:text-white transition">${t.name}</span></div>`).join('');
+        };
+
+        // دالة تغيير الثيم المعدلة
+        window.selectTheme = function(id) { 
+            selectedTheme = id; 
+            const theme = themes.find(t => t.id === id);
+            if(theme) {
+                // تغيير متغير اللون الرئيسي مباشرة في المتصفح
+                document.documentElement.style.setProperty('--main', theme.c);
+            }
+            renderThemesGrid();
+        };
+
+        window.addCat = function() { window.db.cats.push({id: Date.now(), name: "صنف جديد"}); renderCategories(); };
+        window.deleteCat = function(id) { if(confirm('حذف الصنف؟')) { window.db.cats = window.db.cats.filter(c=>c.id!==id); window.db.items = window.db.items.filter(i=>i.catId!==id); renderCategories(); } };
+        window.deleteItem = function(id) { if(confirm('حذف الطبق؟')) { window.db.items = window.db.items.filter(i=>i.id!==id); renderCategories(); } };
+
+        window.openItemEditor = function(id=null) { 
+            document.getElementById('edit_cat').innerHTML = window.db.cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join(''); 
+            const m = document.getElementById('itemModal'); m.classList.remove('hidden'); 
+            if(id) { 
+                const i = window.db.items.find(x=>x.id===id); document.getElementById('edit_id').value=i.id; document.getElementById('edit_name').value=i.name; document.getElementById('edit_cat').value=i.catId; document.getElementById('edit_price').value=i.price; document.getElementById('edit_old').value=i.old||0; document.getElementById('edit_img').value=i.img; document.getElementById('edit_desc').value=i.desc; 
+            } else { 
+                document.getElementById('edit_id').value=''; document.getElementById('edit_name').value=''; document.getElementById('edit_price').value=''; document.getElementById('edit_old').value=''; document.getElementById('edit_img').value=''; document.getElementById('edit_desc').value=''; 
+            } 
+            updatePreview(); 
+        };
+
+        window.updatePreview = function() {
+            const name = document.getElementById('edit_name').value || 'اسم الطبق'; const price = document.getElementById('edit_price').value || '0'; const img = document.getElementById('edit_img').value || 'https://placehold.co/400x300/1a1a1a/333?text=Preview'; const desc = document.getElementById('edit_desc').value || 'الوصف سيظهر هنا...';
+            document.getElementById('prev_name').innerText = name; document.getElementById('prev_price').innerText = price + ' د.ع'; document.getElementById('prev_img').src = img; document.getElementById('prev_desc').innerText = desc;
+        };
+
+        window.saveItem = function() { 
+            const id = document.getElementById('edit_id').value; const currentItem = id ? window.db.items.find(x=>x.id==id) : null; 
+            const item = { id: id ? parseInt(id) : Date.now(), catId: parseInt(document.getElementById('edit_cat').value), name: document.getElementById('edit_name').value, price: parseFloat(document.getElementById('edit_price').value)||0, old: parseFloat(document.getElementById('edit_old').value)||0, img: document.getElementById('edit_img').value, desc: document.getElementById('edit_desc').value, sold: currentItem ? currentItem.sold : false, soldInfo: currentItem ? currentItem.soldInfo : null }; 
+            if(id) window.db.items[window.db.items.findIndex(x=>x.id==id)] = item; else window.db.items.push(item); 
+            document.getElementById('itemModal').classList.add('hidden'); renderCategories(); 
+        };
+
+        window.openStockModal = function(id) { 
+            const item = window.db.items.find(i => i.id === id); if(!item) return; 
+            document.getElementById('stock_item_id').value = id; document.getElementById('modalItemName').innerText = item.name; document.getElementById('stockModal').classList.remove('hidden'); 
+            let currentMode = item.sold ? (item.soldInfo ? item.soldInfo.mode : 'manual') : 'available'; selectStockOption(currentMode); document.getElementById('time_duration').value = 1; setTimeUnit('hours'); 
+        };
+
+        window.selectStockOption = function(mode) { 
+            document.getElementById('selected_mode').value = mode; document.querySelectorAll('.option-card').forEach(el => el.classList.remove('active', 'border-[var(--main)]', 'bg-[#222]')); 
+            const card = document.getElementById('opt-' + mode); card.classList.add('active', 'border-[var(--main)]', 'bg-[#222]');
+            card.querySelector('.radio-ui').classList.remove('border-gray-600'); card.querySelector('.radio-ui').classList.add('bg-[var(--main)]', 'border-[var(--main)]');
+            // Reset others
+            document.querySelectorAll('.option-card:not(#opt-'+mode+') .radio-ui').forEach(r => {r.classList.add('border-gray-600'); r.classList.remove('bg-[var(--main)]', 'border-[var(--main)]');});
+            const timeBox = document.getElementById('timeInputs'); mode === 'timed' ? timeBox.classList.remove('hidden') : timeBox.classList.add('hidden'); 
+        };
+
+        window.setTimeUnit = function(unit) { currentTimeUnit = unit; document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-' + unit).classList.add('active'); };
+
+        window.saveStockSettings = function() { 
+            const id = parseInt(document.getElementById('stock_item_id').value); const mode = document.getElementById('selected_mode').value; const item = window.db.items.find(i => i.id === id); 
+            if (mode === 'available') { item.sold = false; item.soldInfo = null; } else { item.sold = true; item.soldInfo = { mode: mode, until: null }; if (mode === 'auto') { const t = new Date(); t.setDate(t.getDate() + 1); t.setHours(6, 0, 0, 0); item.soldInfo.until = t.getTime(); } else if (mode === 'timed') { const dur = parseInt(document.getElementById('time_duration').value) || 1; item.soldInfo.until = Date.now() + (dur * (currentTimeUnit === 'hours' ? 3600000 : 86400000)); } } 
+            document.getElementById('stockModal').classList.add('hidden'); renderStockItems(document.getElementById('stockSearch').value); saveToCloud(); 
+        };
+
+        window.renderStockItems = function(search = "") { 
+            const list = document.getElementById('stockList'); if(!list) return; list.innerHTML = ''; 
+            const soldCount = window.db.items.filter(i => i.sold).length; document.getElementById('stat_sold_count').innerText = soldCount; 
+            const items = window.db.items.filter(i => i.name.toLowerCase().includes(search.toLowerCase())); 
+            if(items.length === 0) { list.innerHTML = `<div class="col-span-1 md:col-span-2 text-center text-gray-500 py-8">لا توجد نتائج</div>`; return; } 
+            items.forEach(item => { 
+                const isSold = item.sold; const mode = item.soldInfo ? item.soldInfo.mode : 'manual'; 
+                let statusHtml = '<span class="text-green-500 text-xs font-bold"><i class="fas fa-check-circle me-1"></i> متاح</span>', border = 'border-[#333]'; 
+                if (isSold) { if (mode === 'auto') { statusHtml = '<span class="text-yellow-500 text-xs font-bold"><i class="fas fa-moon me-1"></i> يعود غداً</span>'; border = 'border-yellow-500/30'; } else if (mode === 'timed') { const left = item.soldInfo.until - Date.now(); const hrs = Math.ceil(left / 3600000); statusHtml = `<span class="text-blue-400 text-xs font-bold"><i class="fas fa-clock me-1"></i> يعود بعد ${hrs} س</span>`; border = 'border-blue-500/30'; } else { statusHtml = '<span class="text-red-500 text-xs font-bold"><i class="fas fa-ban me-1"></i> متوقف يدوياً</span>'; border = 'border-red-500/30'; } } 
+                list.innerHTML += `<div onclick="openStockModal(${item.id})" class="stock-item cursor-pointer rounded-2xl p-4 flex items-center gap-4 border ${border} hover:brightness-125 group relative overflow-hidden bg-[#1a1a1a]"><img src="${item.img || 'https://placehold.co/100'}" class="w-16 h-16 rounded-xl object-cover bg-black"><div class="flex-1"><div class="font-bold text-lg mb-1 text-white">${item.name}</div>${statusHtml}</div><div class="bg-[#333] w-10 h-10 rounded-full flex items-center justify-center text-gray-400 group-hover:bg-[var(--main)] group-hover:text-black transition"><i class="fas fa-pen"></i></div></div>`; 
+            }); 
+        };
+
+        window.doLogin = function() { 
+            const realPass = window.db.config.pass || "1234";
+            if(document.getElementById('loginPass').value === realPass) { document.getElementById('loginModal').classList.add('hidden'); document.getElementById('adminPanel').classList.remove('hidden'); } else { const pass = document.getElementById('loginPass'); pass.classList.add('animate__shakeX'); setTimeout(()=> pass.classList.remove('animate__shakeX'), 1000); alert("كلمة المرور غير صحيحة!"); } 
+        };
+
+        window.switchTab = function(t) { 
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden')); document.getElementById('tab-' + t).classList.remove('hidden'); 
+            document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('text-[var(--main)]', 'border-b-2', 'border-[var(--main)]'); btn.classList.add('text-gray-400'); });
+            event.currentTarget.classList.remove('text-gray-400'); event.currentTarget.classList.add('text-[var(--main)]', 'border-b-2', 'border-[var(--main)]');
+            if(t==='stock') renderStockItems(); 
+        };
+
+        window.selectStatus = function(s) { 
+            document.getElementById('set_status').value = s; document.querySelectorAll('.status-card').forEach(el => el.classList.remove('selected', 'border-[var(--main)]', 'border-2')); document.getElementById(`status-card-${s}`).classList.add('selected', 'border-[var(--main)]', 'border-2'); const box = document.getElementById('scheduleContainer'); if(s==='auto') { box.classList.remove('hidden'); box.classList.add('animate__fadeInDown'); } else box.classList.add('hidden'); 
+        };
+        window.renderSchedule = function() { const c = document.getElementById('weeklySchedule'); if(!c) return; c.innerHTML = ''; const s = window.db.config.schedule || {}; daysMap.forEach(d => { const dd = s[d.key] || { active: true, start: "09:00", end: "23:00" }; c.innerHTML += `<div class="flex flex-wrap items-center gap-4 bg-[#1a1a1a] p-3 rounded-xl border border-[#333] hover:border-[#444] transition group"><div class="w-20 font-bold ${d.key==='fri'?'text-[var(--main)]':'text-gray-300'}">${d.label}</div><div class="flex items-center"><input type="checkbox" id="sch_active_${d.key}" class="toggle-checkbox w-4 h-4" ${dd.active?'checked':''} onchange="toggleDayInputs('${d.key}')"></div><div class="flex-1 flex items-center gap-2 justify-end opacity-${dd.active?'100':'20'} transition-opacity" id="time_inputs_${d.key}"><input type="time" id="sch_start_${d.key}" value="${dd.start}" class="bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--main)] outline-none" ${!dd.active?'disabled':''}><span class="text-gray-500 text-xs font-bold">إلى</span><input type="time" id="sch_end_${d.key}" value="${dd.end}" class="bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-white text-sm focus:border-[var(--main)] outline-none" ${!dd.active?'disabled':''}></div></div>`; }); };
+        window.toggleDayInputs = function(k) { const a = document.getElementById(`sch_active_${k}`).checked; const d = document.getElementById(`time_inputs_${k}`); if(a){d.classList.remove('opacity-20');d.classList.add('opacity-100');}else{d.classList.remove('opacity-100');d.classList.add('opacity-20');} document.getElementById(`sch_start_${k}`).disabled=!a; document.getElementById(`sch_end_${k}`).disabled=!a; };
+        window.copyFirstDayToAll = function() { if(confirm('تطبيق توقيت السبت على الكل؟')) { const s = document.getElementById('sch_start_sat').value, e = document.getElementById('sch_end_sat').value, a = document.getElementById('sch_active_sat').checked; daysMap.forEach(d=>{ if(d.key!=='sat'){ document.getElementById(`sch_start_${d.key}`).value=s; document.getElementById(`sch_end_${d.key}`).value=e; document.getElementById(`sch_active_${d.key}`).checked=a; toggleDayInputs(d.key); }}); } };
+
+        loadFromCloud();
+    </script>
+</body>
+</html>
